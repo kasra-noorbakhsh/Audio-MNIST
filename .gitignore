@@ -43,8 +43,9 @@ ENV/
 .Spotlight-V100
 .Trashes
 
-# Data files (adjust based on your project)
-# *.wav
-# *.npy
+# Data files
+*.wav
+*.npy
 # models/  # if you have trained models you don't want to push
 data/
+cached_features/
