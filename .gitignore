@@ -30,7 +30,6 @@ ENV/
 
 # IDE
 .vscode/
-.idea/
 *.swp
 *.swo
 
@@ -43,15 +42,9 @@ ENV/
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
-Thumbs.db
 
 # Data files (adjust based on your project)
 # *.wav
-# *.mp3
 # *.npy
-# *.npz
-# *.pkl
-# *.pickle
 # models/  # if you have trained models you don't want to push
-# data/    # if your dataset is large
+data/
