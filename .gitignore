@@ -50,4 +50,4 @@ ENV/
 data/
 cached_features/
 audio_mnist_kaggle_upload/
-audio_mnist_kaggle_upload.zip/
+audio_mnist_kaggle_upload.zip
