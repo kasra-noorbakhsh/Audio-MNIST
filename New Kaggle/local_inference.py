@@ -75,7 +75,7 @@ def predict_digit(audio_path, model_path=MODEL_PATH, device='cpu'):
     y, sr = load_and_preprocess(audio_path)
     logmel = to_logmel(y, sr)
     
-    # Normalize (use train mean/std; hardcode or load if available)
+    # Normalize (use train mean/std; hardcode)
     mean, std = -60.8624, 19.5190  # update from your run
     logmel = (logmel - mean) / (std + 1e-6)
     
