@@ -49,5 +49,3 @@ ENV/
 # models/  # if you have trained models you don't want to push
 data/
 cached_features/
-audio_mnist_kaggle_upload/
-audio_mnist_kaggle_upload.zip
