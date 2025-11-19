@@ -10,7 +10,7 @@ N_MELS = 128
 HOP_LENGTH = 512
 N_FFT = 1024
 NUM_CLASSES = 10
-MODEL_PATH = "best_model.pth"
+MODEL_PATH = "best_cnn_model.pth"
 
 # Preprocess functions (copy from project)
 def load_and_preprocess(path, target_sr=TARGET_SR, target_len=TARGET_LEN):
