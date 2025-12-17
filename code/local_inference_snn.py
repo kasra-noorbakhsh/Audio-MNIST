@@ -10,7 +10,7 @@ N_MELS = 128
 HOP_LENGTH = 512
 N_FFT = 1024
 NUM_CLASSES = 10
-MODEL_PATH = "best_snn_model.pth"  # Update to your SNN model path
+MODEL_PATH = "best_snn_model.pth"
 TIME_STEPS = 20  # SNN-specific
 DECAY_MULTIPLIER = 0.9
 THRESHOLD = 1.0
@@ -140,9 +140,8 @@ class SNN(torch.nn.Module):
             outs.append(cur)
 
         out = self.output_pooling(outs)
-        return out  # For CrossEntropyLoss
+        return out
 
-# Inference
 def predict_digit(audio_path, model_path=MODEL_PATH, device='cpu'):
     model = SNN(device=device)
     model.load_state_dict(torch.load(model_path, map_location=device))
@@ -152,8 +151,8 @@ def predict_digit(audio_path, model_path=MODEL_PATH, device='cpu'):
     y, sr = load_and_preprocess(audio_path)
     logmel = to_logmel(y, sr)
     
-    # Normalize (use train mean/std; hardcode or load if available)
-    mean, std = 0.2392, 0.2440  # Update from your run
+    # Normalize (use train mean/std; hardcoded)
+    mean, std = 0.2392, 0.2440
     logmel = (logmel - mean) / (std + 1e-6)
     
     input_tensor = torch.tensor(logmel, dtype=torch.float32).unsqueeze(0).unsqueeze(0)  # (1,1,height,width)
