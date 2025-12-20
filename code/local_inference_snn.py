@@ -11,7 +11,7 @@ HOP_LENGTH = 512
 N_FFT = 1024
 NUM_CLASSES = 10
 MODEL_PATH = "best_snn_model.pth"
-TIME_STEPS = 20  # SNN-specific
+TIME_STEPS = 20
 DECAY_MULTIPLIER = 0.9
 THRESHOLD = 1.0
 PENALTY_THRESHOLD = 1.5
@@ -116,7 +116,7 @@ class SNN(torch.nn.Module):
         self.fc2 = torch.nn.Linear(256, num_classes)
         self.output_pooling = OutputPooling(average_output=False)
         
-        self.to(self.device)  # Move to device
+        self.to(self.device)
 
     def reset_state(self):
         self.layer1.reset_state()
