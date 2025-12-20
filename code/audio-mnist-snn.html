@@ -7517,11 +7517,19 @@ a.anchor-link {
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p><font color="#5499C7" size="7">Audio MNIST</font></p>
+<p><font color="#5499C7" size="7">Audio MNIST using SNN</font></p>
 <ul>
-<li><font size="5"><strong>Done By</strong> : Kasra Noorbakhsh</font></li>
-<li><font size="5"><strong>UID</strong>  : 810100230</font></li>
-<li><font size="5"><strong>Goal</strong>  : Digit Recognition</font></li>
+<li><p><font size="5"><strong>Done By</strong> : Kasra Noorbakhsh</font></p>
+</li>
+<li><p><font size="5"><strong>UID</strong>  : 810100230</font></p>
+</li>
+<li><p><font size="5"><strong>Goal</strong>  : Train a Spiking Neural Network (SNN) to recognize spoken digits (0–9) from audio samples.</font></p>
+</li>
+<li><p><font size="5"><strong>Dataset Link</strong>  : <a href="https://www.kaggle.com/datasets/sripaadsrinivasan/audio-mnist">A Large dataset of Audio MNIST</a></font></p>
+</li>
+<li><p><font size="5"><strong>Dataset Info</strong>  : The dataset consists of 30000 audio samples of spoken digits (0-9) of 60 folders and 500 files each.
+There is one directory per speaker holding the audio recordings. Additionally "audioMNIST_meta.txt" provides meta information such as gender or age of each speaker.</font></p>
+</li>
 </ul>
 </div>
 </div>
@@ -7545,6 +7553,11 @@ a.anchor-link {
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p align="justify"><font color="#A9CCE3" size="6"><b>Section 0: Setup &amp; imports</b></font><br/></p>
+<p align="justify">
+<span style="background-color: skyblue; color: black; padding: 5px 8px; border-radius: 3px; display: inline-block;">
+<b>Notes: Deep learning is inherently random: weight initialization, data shuffling, and GPU nondeterminism. set_seed(seed=42) function ensures repeatable experiments.</b>
+</span>
+</p>
 </div>
 </div>
 </div>
@@ -7553,7 +7566,7 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [1]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Standard library</span>
@@ -7611,9 +7624,9 @@ a.anchor-link {
 <span class="c1"># Hyperparameters (general + SNN-specific)</span>
 <span class="n">TARGET_SR</span> <span class="o">=</span> <span class="mi">16000</span>  <span class="c1"># Target sample rate (original is 48kHz, downsample for efficiency)</span>
 <span class="n">TARGET_LEN</span> <span class="o">=</span> <span class="n">TARGET_SR</span>  <span class="c1"># 1 second of audio (pad/truncate to this)</span>
-<span class="n">N_MELS</span> <span class="o">=</span> <span class="mi">128</span>  <span class="c1"># Number of Mel filters</span>
-<span class="n">HOP_LENGTH</span> <span class="o">=</span> <span class="mi">512</span>  <span class="c1"># Hop length for STFT</span>
-<span class="n">N_FFT</span> <span class="o">=</span> <span class="mi">1024</span>  <span class="c1"># FFT window size</span>
+<span class="n">N_MELS</span> <span class="o">=</span> <span class="mi">128</span>  <span class="c1"># Number of Mel filters, 128 is standard for speech recognition</span>
+<span class="n">HOP_LENGTH</span> <span class="o">=</span> <span class="mi">512</span>  <span class="c1"># Hop size between STFT windows, determines time resolution of the spectrogram</span>
+<span class="n">N_FFT</span> <span class="o">=</span> <span class="mi">1024</span>  <span class="c1"># FFT window size, 1024 is a standard middle ground for speech</span>
 <span class="n">NUM_CLASSES</span> <span class="o">=</span> <span class="mi">10</span>  <span class="c1"># Digits 0-9</span>
 <span class="n">BATCH_SIZE</span> <span class="o">=</span> <span class="mi">64</span>  <span class="c1"># May reduce to 32 if SNN time steps cause OOM</span>
 <span class="n">NUM_EPOCHS</span> <span class="o">=</span> <span class="mi">20</span>  <span class="c1"># Increased for SNN (slower convergence)</span>
@@ -7621,7 +7634,7 @@ a.anchor-link {
 
 <span class="c1"># SNN-specific params (tune for performance; time steps simulate spiking dynamics)</span>
 <span class="n">TIME_STEPS</span> <span class="o">=</span> <span class="mi">20</span>  <span class="c1"># Number of simulation time steps (higher = better acc, but slower)</span>
-<span class="n">DECAY_MULTIPLIER</span> <span class="o">=</span> <span class="mf">0.9</span>  <span class="c1"># Neuron membrane decay rate (0-1; lower = faster decay)</span>
+<span class="n">DECAY_MULTIPLIER</span> <span class="o">=</span> <span class="mf">0.9</span>  <span class="c1"># Neuron membrane decay rate (0-1; lower = faster decay(faster forgetting))</span>
 <span class="n">THRESHOLD</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># Firing threshold for LIF neurons</span>
 <span class="n">PENALTY_THRESHOLD</span> <span class="o">=</span> <span class="mf">1.5</span>  <span class="c1"># Refractory penalty to reset after spike</span>
 </pre></div>
@@ -7664,7 +7677,7 @@ Using device: cuda
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [2]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># # Data metadata extraction</span>
@@ -7708,7 +7721,8 @@ Using device: cuda
             <span class="c1"># Check if speaker_code matches speaker_id</span>
             <span class="k">if</span> <span class="n">speaker_code</span> <span class="o">!=</span> <span class="n">speaker_id</span><span class="p">:</span>
                 <span class="n">bad_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">wav_path</span><span class="p">))</span>
-                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"path"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">wav_path</span><span class="p">),</span> <span class="s2">"speaker"</span><span class="p">:</span> <span class="n">speaker_id</span><span class="p">,</span> <span class="s2">"digit"</span><span class="p">:</span> <span class="n">digit</span><span class="p">,</span> <span class="s2">"iter"</span><span class="p">:</span> <span class="n">iteration</span><span class="p">,</span> <span class="s2">"flag_bad_name"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"note"</span><span class="p">:</span> <span class="s2">"Speaker mismatch"</span><span class="p">})</span>
+                <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"path"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">wav_path</span><span class="p">),</span> <span class="s2">"speaker"</span><span class="p">:</span> <span class="n">speaker_id</span><span class="p">,</span> <span class="s2">"digit"</span><span class="p">:</span> <span class="n">digit</span><span class="p">,</span> <span class="s2">"iter"</span><span class="p">:</span> <span class="n">iteration</span><span class="p">,</span>
+                              <span class="s2">"flag_bad_name"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">"note"</span><span class="p">:</span> <span class="s2">"Speaker mismatch"</span><span class="p">})</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="n">digit</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">digit</span> <span class="o">&gt;</span> <span class="mi">9</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid digit"</span><span class="p">)</span>
@@ -7724,7 +7738,6 @@ Using device: cuda
 <span class="c1"># Sort DF for reproducibility</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s1">'path'</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-<span class="c1"># Logging (to file for repro)</span>
 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Total files: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span><span class="si">}</span><span class="s2"> (Expected ~30,000 for full dataset)"</span><span class="p">)</span>
 <span class="k">if</span> <span class="n">bad_files</span><span class="p">:</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Bad files found: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">bad_files</span><span class="p">)</span><span class="si">}</span><span class="s2">. Examples: </span><span class="si">{</span><span class="n">bad_files</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -7911,11 +7924,10 @@ Metadata saved to cache for reproducibility.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [3]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Audio file inspection: Sample rates and durations</span>
-<span class="c1"># Set up logging for reproducibility</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Audio file inspection</span>
 <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">CACHE_DIR</span> <span class="o">/</span> <span class="s2">"audio_inspection.log"</span><span class="p">),</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span><span class="p">)</span>
 
 <span class="k">def</span> <span class="nf">inspect_audio_files</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">sample_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">full_check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="n">RANDOM_SEED</span><span class="p">):</span>
@@ -7950,7 +7962,6 @@ Metadata saved to cache for reproducibility.
         <span class="nb">print</span><span class="p">(</span><span class="s2">"No valid files inspected."</span><span class="p">)</span>
         <span class="k">return</span>
     
-    <span class="c1"># Stats</span>
     <span class="n">mean_dur</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">durations</span><span class="p">)</span>
     <span class="n">median_dur</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">durations</span><span class="p">)</span>
     <span class="n">max_dur</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">durations</span><span class="p">)</span>
@@ -7960,7 +7971,6 @@ Metadata saved to cache for reproducibility.
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Duration stats: mean=</span><span class="si">{</span><span class="n">mean_dur</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s, median=</span><span class="si">{</span><span class="n">median_dur</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s, max=</span><span class="si">{</span><span class="n">max_dur</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SR: </span><span class="si">{</span><span class="n">sr_set</span><span class="si">}</span><span class="s2">, Durations: mean=</span><span class="si">{</span><span class="n">mean_dur</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, median=</span><span class="si">{</span><span class="n">median_dur</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, max=</span><span class="si">{</span><span class="n">max_dur</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     
-    <span class="c1"># Plot histogram</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">durations</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"Duration (s)"</span><span class="p">)</span>
@@ -8012,7 +8022,7 @@ Duration stats: mean=0.643s, median=0.632s, max=1.000s
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=b6be1829">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=a7a91358">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8020,10 +8030,14 @@ Duration stats: mean=0.643s, median=0.632s, max=1.000s
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h3 id="Step-2:-Data-cleaning-and-preprocessing"><p align="justify"><font color="#d62b5b" size="6">Step 2: Data cleaning and preprocessing</font></p><a class="anchor-link" href="#Step-2:-Data-cleaning-and-preprocessing">¶</a></h3><p align="justify">
 <ul>
-<li></li>
-<li></li>
-<li></li>
-<li></li>
+<li><p>Convert all audio to 16 kHz mono</p>
+</li>
+<li><p>Normalize and trim/pad to 1 s</p>
+</li>
+<li><p>Extract log-Mel spectrograms (128 Mel bins)</p>
+</li>
+<li><p>Cache features for training</p>
+</li>
 </ul>
 </p></div>
 </div>
@@ -8035,7 +8049,11 @@ Duration stats: mean=0.643s, median=0.632s, max=1.000s
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h4 id="Section-3:-Preprocessing-Functions"><p align="justify"><font color="#A9CCE3" size="6"><b>Section 3: Preprocessing Functions</b></font></p><a class="anchor-link" href="#Section-3:-Preprocessing-Functions">¶</a></h4>
+<h4 id="Section-3:-Preprocessing-Functions"><p align="justify"><font color="#A9CCE3" size="6"><b>Section 3: Preprocessing Functions</b></font></p><a class="anchor-link" href="#Section-3:-Preprocessing-Functions">¶</a></h4><p align="justify">
+<span style="background-color: skyblue; color: black; padding: 5px 8px; border-radius: 3px; display: inline-block;">
+<b>Notes: Typical values when you log scale the audio is [-80 dB, 0 dB], and because spiking neurons typically expect non-negative input, Negative values don’t map well to spike rates. We shifted the range to [0, 1].</b>
+</span>
+</p>
 </div>
 </div>
 </div>
@@ -8145,7 +8163,7 @@ Duration stats: mean=0.643s, median=0.632s, max=1.000s
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [5]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">test_preprocessing</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">fixed_sample</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="n">RANDOM_SEED</span><span class="p">):</span>
@@ -8160,7 +8178,6 @@ Duration stats: mean=0.643s, median=0.632s, max=1.000s
 <span class="sd">    Example:</span>
 <span class="sd">        test_preprocessing(df, fixed_sample=True)</span>
 <span class="sd">    """</span>
-    <span class="c1"># Filter to good files</span>
     <span class="n">good_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">'flag_bad_name'</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">good_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="s2">"No good files to test."</span><span class="p">)</span>
@@ -8263,7 +8280,7 @@ Log-Mel range (for SNN): min=0.00, max=1.00
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [6]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">extract_features</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Extracting features"</span><span class="p">):</span>
@@ -8283,7 +8300,6 @@ Log-Mel range (for SNN): min=0.00, max=1.00
 <span class="sd">    Example:</span>
 <span class="sd">        sample_features, _ = extract_features(df, n_samples=100, cache_file=CACHE_DIR / "sample_features.npy")</span>
 <span class="sd">    """</span>
-    <span class="c1"># Filter good files</span>
     <span class="n">good_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">'flag_bad_name'</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">good_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No good files to extract features from."</span><span class="p">)</span>
@@ -8324,7 +8340,6 @@ Log-Mel range (for SNN): min=0.00, max=1.00
     <span class="k">if</span> <span class="n">features</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Sample feature range (for SNN): min=</span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, max=</span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     
-    <span class="c1"># Save to cache</span>
     <span class="k">if</span> <span class="n">cache_file</span><span class="p">:</span>
         <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">cache_file</span><span class="p">,</span> <span class="n">features</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Features saved to </span><span class="si">{</span><span class="n">cache_file</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -8372,7 +8387,7 @@ Features saved to /kaggle/working/cache/sample_features.npy
 </div>
 </div>
 </div>
-<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=dbdee611">
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=07dc4df5">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
@@ -8380,10 +8395,14 @@ Features saved to /kaggle/working/cache/sample_features.npy
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <h3 id="Step-3:-Feature-Extraction-and-Dataset-Preparation"><p align="justify"><font color="#d62b5b" size="6">Step 3: Feature Extraction and Dataset Preparation</font></p><a class="anchor-link" href="#Step-3:-Feature-Extraction-and-Dataset-Preparation">¶</a></h3><p align="justify">
 <ul>
-<li></li>
-<li></li>
-<li></li>
-<li></li>
+<li><p>Extract and cache all log-Mel features</p>
+</li>
+<li><p>Create metadata.csv</p>
+</li>
+<li><p>Split dataset by speaker</p>
+</li>
+<li><p>Check balance and feature shapes</p>
+</li>
 </ul>
 </p></div>
 </div>
@@ -8404,7 +8423,7 @@ Features saved to /kaggle/working/cache/sample_features.npy
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [7]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Full feature extraction and caching (per-file to avoid memory issues for 30k samples)</span>
@@ -8427,7 +8446,6 @@ Features saved to /kaggle/working/cache/sample_features.npy
 <span class="sd">    Returns:</span>
 <span class="sd">        df (pd.DataFrame): Updated with 'feature_path'.</span>
 <span class="sd">    """</span>
-    <span class="c1"># Filter good files</span>
     <span class="n">good_df</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="s1">'flag_bad_name'</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">good_df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No good files to process."</span><span class="p">)</span>
@@ -8445,9 +8463,7 @@ Features saved to /kaggle/working/cache/sample_features.npy
         
         <span class="k">try</span><span class="p">:</span>
             <span class="n">y</span><span class="p">,</span> <span class="n">sr</span> <span class="o">=</span> <span class="n">load_and_preprocess</span><span class="p">(</span><span class="n">audio_path</span><span class="p">)</span>
-            <span class="n">logmel</span> <span class="o">=</span> <span class="n">to_logmel</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">positive_shift</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># Enable for SNN positivity</span>
-            <span class="c1"># Optional: Stack deltas for temporal dynamics in SNN (uncomment and set model channels=3)</span>
-            <span class="c1"># logmel = np.stack([logmel, librosa.feature.delta(logmel), librosa.feature.delta(logmel, order=2)])</span>
+            <span class="n">logmel</span> <span class="o">=</span> <span class="n">to_logmel</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">sr</span><span class="p">,</span> <span class="n">positive_shift</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">feature_path</span><span class="p">,</span> <span class="n">logmel</span><span class="p">)</span>
             <span class="n">feature_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">feature_path</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -8468,7 +8484,6 @@ Features saved to /kaggle/working/cache/sample_features.npy
 <span class="k">if</span> <span class="n">META_PATH</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
     <span class="n">meta_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">META_PATH</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loaded cached metadata with features: </span><span class="si">{</span><span class="n">meta_df</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="c1"># Quick verification</span>
     <span class="k">if</span> <span class="s1">'feature_path'</span> <span class="ow">in</span> <span class="n">meta_df</span><span class="o">.</span><span class="n">columns</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">meta_df</span><span class="p">[</span><span class="s1">'feature_path'</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"First feature path exists: </span><span class="si">{</span><span class="n">meta_df</span><span class="p">[</span><span class="s1">'feature_path'</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -8485,7 +8500,6 @@ Features saved to /kaggle/working/cache/sample_features.npy
 <span class="c1"># For cross-platform: Ensure paths use / (but Path handles it)</span>
 <span class="n">meta_df</span><span class="p">[</span><span class="s1">'feature_path'</span><span class="p">]</span> <span class="o">=</span> <span class="n">meta_df</span><span class="p">[</span><span class="s1">'feature_path'</span><span class="p">]</span><span class="o">.</span><span class="n">str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">)</span>
 
-<span class="c1"># Preview</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"Fixed paths (preview):"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">meta_df</span><span class="p">[</span><span class="s1">'feature_path'</span><span class="p">]</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"First path exists: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">meta_df</span><span class="p">[</span><span class="s1">'feature_path'</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -8542,7 +8556,7 @@ First path exists: True
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [8]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Dataset splitting by speakers (speaker-independent)</span>
@@ -8590,14 +8604,12 @@ First path exists: True
 <span class="k">else</span><span class="p">:</span>
     <span class="n">train_df</span><span class="p">,</span> <span class="n">val_df</span><span class="p">,</span> <span class="n">test_df</span> <span class="o">=</span> <span class="n">split_dataset_by_speakers</span><span class="p">(</span><span class="n">meta_df</span><span class="p">)</span>
 
-<span class="c1"># Print stats</span>
 <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"Train"</span><span class="p">,</span> <span class="n">train_df</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Val"</span><span class="p">,</span> <span class="n">val_df</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Test"</span><span class="p">,</span> <span class="n">test_df</span><span class="p">)]:</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s2"> samples, </span><span class="si">{</span><span class="n">d</span><span class="p">[</span><span class="s1">'speaker'</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span><span class="si">}</span><span class="s2"> speakers"</span><span class="p">)</span>
 
-<span class="c1"># Plot and save digit distributions</span>
 <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"Train"</span><span class="p">,</span> <span class="n">train_df</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Val"</span><span class="p">,</span> <span class="n">val_df</span><span class="p">),</span> <span class="p">(</span><span class="s2">"Test"</span><span class="p">,</span> <span class="n">test_df</span><span class="p">)]:</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
-    <span class="n">d</span><span class="p">[</span><span class="s1">'digit'</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">bar</span><span class="p">()</span>
+    <span class="n">d</span><span class="p">[</span><span class="s1">'digit'</span><span class="p">]</span><span class="o">.</span><span class="n">value_counts</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span><span class="o">.</span><span class="n">plot</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">rot</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Digit distribution (</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"Digit"</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"Count"</span><span class="p">)</span>
@@ -8687,6 +8699,24 @@ Test: 4500 samples, 9 speakers
 <h4 id="Section-8:-Digit-Recognition-(main-task)"><p align="justify"><font color="#A9CCE3" size="6"><b>Section 8: Digit Recognition (main task)</b></font></p><a class="anchor-link" href="#Section-8:-Digit-Recognition-(main-task)">¶</a></h4><ul>
 <li>10-class classification problem (digits 0–9) using 2D Mel spectrograms.</li>
 </ul>
+<p align="justify">
+<span style="background-color: skyblue; color: black; padding: 5px 8px; border-radius: 3px; display: inline-block;">
+<b>Notes: We add InputToSpiking layer because our input is static (log-Mel spectrogram), but, SNNs require temporal activity rate coding = information encoded by firing frequency. </b>
+</span>
+</p>
+<p>Architecture overview:</p>
+<span style="background-color: skyblue; color: black; padding: 5px 8px; border-radius: 3px; display: inline-block;">
+Input (log-Mel)<br/>
+↓ rate coding<br/>
+SpikingConv(1 → 32)<br/>
+↓ MaxPool<br/>
+SpikingConv(32 → 64)<br/>
+↓ MaxPool<br/>
+Dropout<br/>
+↓ FC(256)<br/>
+↓ FC(10)<br/>
+↓ Temporal sum
+</span>
 </div>
 </div>
 </div>
@@ -8695,7 +8725,7 @@ Test: 4500 samples, 9 speakers
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [9]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Model definition (SNN version)</span>
@@ -8712,7 +8742,7 @@ Test: 4500 samples, 9 speakers
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span> <span class="c1"># biologically inspired Poisson-like encoder</span>
         <span class="n">random_activation</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand_like</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">random_activation</span> <span class="o">*</span> <span class="n">x</span>  <span class="c1"># Flicker for spiking</span>
 
@@ -8724,9 +8754,9 @@ Test: 4500 samples, 9 speakers
         <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">padding</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">(</span><span class="n">out_channels</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">decay_multiplier</span> <span class="o">=</span> <span class="n">decay_multiplier</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">penalty_threshold</span> <span class="o">=</span> <span class="n">penalty_threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">decay_multiplier</span> <span class="o">=</span> <span class="n">decay_multiplier</span> <span class="c1"># membrane decay</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span> <span class="c1"># firing threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">penalty_threshold</span> <span class="o">=</span> <span class="n">penalty_threshold</span> <span class="c1"># refractory behavior</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reset_state</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">init_weights</span><span class="p">)</span>
 
@@ -8740,14 +8770,15 @@ Test: 4500 samples, 9 speakers
 
         <span class="n">input_excitation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
-        <span class="n">inner_excitation</span> <span class="o">=</span> <span class="n">input_excitation</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_inner</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">decay_multiplier</span>
+        <span class="n">inner_excitation</span> <span class="o">=</span> <span class="n">input_excitation</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_inner</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">decay_multiplier</span> <span class="c1"># Leaky integration: Vt​=It​+λVt−1​</span>
 
-        <span class="n">outer_excitation</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">inner_excitation</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span>
+        <span class="n">outer_excitation</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">inner_excitation</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span> <span class="c1"># If membrane &gt; threshold → spike</span>
 
         <span class="n">do_penalize_gate</span> <span class="o">=</span> <span class="p">(</span><span class="n">outer_excitation</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
         <span class="n">inner_excitation</span> <span class="o">=</span> <span class="n">inner_excitation</span> <span class="o">-</span> <span class="n">do_penalize_gate</span> <span class="o">*</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">penalty_threshold</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">*</span> <span class="n">inner_excitation</span><span class="p">)</span>
 
+        <span class="c1"># Output is previous membrane, New membrane stored for next timestep. This introduces temporal delay, mimicking biological neurons.</span>
         <span class="n">delayed_return_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_inner</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">prev_inner</span> <span class="o">=</span> <span class="n">inner_excitation</span>
         <span class="k">return</span> <span class="n">delayed_return_state</span>
@@ -8808,7 +8839,6 @@ Test: 4500 samples, 9 speakers
         <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_pooling</span><span class="p">(</span><span class="n">outs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">out</span>  <span class="c1"># For CrossEntropyLoss</span>
 
-<span class="c1"># Instantiate and move to device</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">SNN</span><span class="p">(</span><span class="n">num_classes</span><span class="o">=</span><span class="n">NUM_CLASSES</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
@@ -8866,7 +8896,7 @@ Total trainable params: 4,216,138
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [10]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Helper: Load cached .npy features with progress and error handling</span>
@@ -8884,7 +8914,6 @@ Total trainable params: 4,216,138
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No features loaded."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">feats</span><span class="p">)</span>  <span class="c1"># (samples, height, width)</span>
 
-<span class="c1"># Load features</span>
 <span class="n">X_train</span> <span class="o">=</span> <span class="n">load_features</span><span class="p">(</span><span class="n">train_df</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Loading train features"</span><span class="p">)</span>
 <span class="n">Y_train</span> <span class="o">=</span> <span class="n">train_df</span><span class="p">[</span><span class="s1">'digit'</span><span class="p">]</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
 <span class="n">X_val</span> <span class="o">=</span> <span class="n">load_features</span><span class="p">(</span><span class="n">val_df</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Loading val features"</span><span class="p">)</span>
@@ -8998,11 +9027,10 @@ Tensors saved to cache.
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [11]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Training loop with improvements</span>
-<span class="n">MODEL_PATH</span> <span class="o">=</span> <span class="n">WORK_DIR</span> <span class="o">/</span> <span class="s2">"best_model.pth"</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">MODEL_PATH</span> <span class="o">=</span> <span class="n">WORK_DIR</span> <span class="o">/</span> <span class="s2">"best_model.pth"</span>
 <span class="n">LOG_PATH</span> <span class="o">=</span> <span class="n">CACHE_DIR</span> <span class="o">/</span> <span class="s2">"training_log.csv"</span>
 
 <span class="c1"># Early stopping params (increased patience for SNN convergence)</span>
@@ -9011,7 +9039,6 @@ Tensors saved to cache.
 <span class="n">epochs_no_improve</span> <span class="o">=</span> <span class="mi">0</span>
 <span class="n">early_stop</span> <span class="o">=</span> <span class="kc">False</span>
 
-<span class="c1"># Setup logging CSV</span>
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">LOG_PATH</span><span class="p">,</span> <span class="s1">'w'</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s2">"Epoch"</span><span class="p">,</span> <span class="s2">"Train Loss"</span><span class="p">,</span> <span class="s2">"Val Loss"</span><span class="p">,</span> <span class="s2">"Val Acc"</span><span class="p">])</span>
@@ -9077,7 +9104,6 @@ Tensors saved to cache.
 
 <span class="nb">print</span><span class="p">(</span><span class="s2">"✅ Training complete. Log saved to"</span><span class="p">,</span> <span class="n">LOG_PATH</span><span class="p">)</span>
 
-<span class="c1"># Plot metrics and save</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_losses</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span> <span class="n">train_losses</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Train Loss'</span><span class="p">)</span>
@@ -9412,11 +9438,10 @@ Early stopping at epoch 20
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [12]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Evaluation on test set</span>
-<span class="c1"># Load best model (ensure using the trained/best weights)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># Load best model (ensure using the trained/best weights)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">MODEL_PATH</span><span class="p">))</span>
 <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
@@ -9444,12 +9469,10 @@ Early stopping at epoch 20
 <span class="n">acc</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">correct</span> <span class="o">/</span> <span class="n">total</span>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"✅ Test Loss: </span><span class="si">{</span><span class="n">test_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">, Test Accuracy: </span><span class="si">{</span><span class="n">acc</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">%"</span><span class="p">)</span>
 
-<span class="c1"># Log to CSV</span>
 <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">LOG_PATH</span><span class="p">,</span> <span class="s1">'a'</span><span class="p">,</span> <span class="n">newline</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
     <span class="n">writer</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
     <span class="n">writer</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s2">"Test"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">test_loss</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">acc</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span><span class="p">])</span>
 
-<span class="c1"># Confusion Matrix</span>
 <span class="n">cm</span> <span class="o">=</span> <span class="n">confusion_matrix</span><span class="p">(</span><span class="n">all_labels</span><span class="p">,</span> <span class="n">all_preds</span><span class="p">)</span>
 <span class="n">disp</span> <span class="o">=</span> <span class="n">ConfusionMatrixDisplay</span><span class="p">(</span><span class="n">confusion_matrix</span><span class="o">=</span><span class="n">cm</span><span class="p">,</span> <span class="n">display_labels</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)))</span>
 <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
@@ -9460,7 +9483,6 @@ Early stopping at epoch 20
 <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"CM plot saved to working dir."</span><span class="p">)</span>
 
-<span class="c1"># Classification Report</span>
 <span class="n">report</span> <span class="o">=</span> <span class="n">classification_report</span><span class="p">(</span><span class="n">all_labels</span><span class="p">,</span> <span class="n">all_preds</span><span class="p">,</span> <span class="n">digits</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">Classification Report:"</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
